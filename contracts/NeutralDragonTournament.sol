@@ -7,8 +7,10 @@ contract NeutralDragonTournament{
     uint256 wizard2LevelWin;
     uint256 wizard1LevelScore;
     uint256 wizard2LevelScore;
-    uint wizard1Affinity;
-    uint wizard2Affinity;
+    uint256 wizard1Affinity;
+    uint256 wizard2Affinity;
+    uint256 wizard1TimeStamp;
+    uint256 wizard2TimeStamp;
     uint256 wizard1RoundWin;
     uint256 wizard2RoundWin;
     uint256 wizard1RoundLoss;
@@ -106,17 +108,39 @@ contract NeutralDragonTournament{
     }
 
     function roundFixtures() public  {
+        levelNum++;
         totalOfParticipants = tPlayers.length;
+        if(levelNum >=2){
+            for(uint i =0;i<bPlayers.length;i++){
+                tournamentPlayers memory tP = tournamentPlayers(address(0),0,0,0,0,0,0,0,0,0,true);
+        tP.player =  bPlayers[i].player;
+        tP.wizardId = bPlayers[i].wizardId;
+        tP.bet = bPlayers[i].bet;
+        tP.timestamp = bPlayers[i].timestamp;
+        tP.affinityType = bPlayers[i].affinityType;
+        tP.wizardSpell1 = bPlayers[i].wizardSpell1;
+        tP.wizardSpell2 = bPlayers[i].wizardSpell2;
+        tP.wizardSpell3 = bPlayers[i].wizardSpell3;
+        tP.wizardSpell4 = bPlayers[i].wizardSpell4;
+        tP.wizardSpell5 = bPlayers[i].wizardSpell5;
+        tP.winStatus = bPlayers[i].winStatus;
+    // CheckForValidWizard {
+        tPlayers.push(tP);
+            }
+            delete bPlayers;
+        }
         if (tPlayers.length == 1) {
         //   tPlayers[0].player.transfer(tPlayers[0].bet*10000000);//Calculate with respect to 100
             // distributePrize();
 
        } else{
-            levelNum++;
+            
             if (tPlayers.length%2 == 0){
                 if (tPlayers.length == 2){
+                finalMatchArray memory fMA = finalMatchArray(address(0));
                 for (uint i=0;i<tPlayers.length;i++){
-                finals[i].playerAddress = tPlayers[i].player;
+                fMA.playerAddress = tPlayers[i].player;
+                finals.push(fMA);
                 }
                 createMatchFixture();
                 }
@@ -233,21 +257,23 @@ contract NeutralDragonTournament{
             } else {
                 calculateDuel(player1,player2);
             }
+            roundFixtures();
         }
     }
 
-    function calculateDuel(address playerAdr1,address playerAdr2) public {
+    function calculateDuel(address wizardAdr1,address wizardAdr2) public {
         uint[] memory wizard1MoveSpells;
         uint[] memory wizard2MoveSpells;
+        bool wizardFound = false;
                 for(uint j=0;j<tPlayers.length;j++){
-                    if(tPlayers[j].player == playerAdr1){
+                    if(tPlayers[j].player == wizardAdr1){
                         wizard1Affinity = tPlayers[j].affinityType;
                         wizard1MoveSpells[0] = tPlayers[j].wizardSpell1;
                         wizard1MoveSpells[1] = tPlayers[j].wizardSpell2;
                         wizard1MoveSpells[2] = tPlayers[j].wizardSpell3;
                         wizard1MoveSpells[3] = tPlayers[j].wizardSpell4;
                         wizard1MoveSpells[4] = tPlayers[j].wizardSpell5;
-                    } else if(tPlayers[j].player == playerAdr2){
+                    } else if(tPlayers[j].player == wizardAdr2){
                         wizard2Affinity = tPlayers[j].affinityType;
                         wizard2MoveSpells[0] = tPlayers[j].wizardSpell1;
                         wizard2MoveSpells[1] = tPlayers[j].wizardSpell2;
@@ -330,7 +356,7 @@ contract NeutralDragonTournament{
                     // /updateScore(win1,win2,w1Score,w2Score,player1Address,player2Address);
                     if(resultScores.length == 0){
                       scoreArr memory wizard1Score = scoreArr(address(0),0,0,0,0,0,0,0,0,0);
-                        wizard1Score.plrAddress = playerAdr1;
+                        wizard1Score.plrAddress = wizardAdr1;
                         wizard1Score.totalScore = wizard1RoundScore;
                         wizard1Score.plrStatus = 1;
                         wizard1Score.noOfWins = wizard1RoundWin;
@@ -342,7 +368,7 @@ contract NeutralDragonTournament{
                         wizard1Score.noOfLossAgainstElemental = wizard1LossAgainstElemental;
                         resultScores.push(wizard1Score);
                       scoreArr memory wizard2Score = scoreArr(address(0),0,0,0,0,0,0,0,0,0);
-                        wizard2Score.plrAddress = playerAdr2;
+                        wizard2Score.plrAddress = wizardAdr2;
                         wizard2Score.totalScore = wizard2RoundScore;
                         wizard2Score.plrStatus = 1;
                         wizard2Score.noOfWins = wizard2RoundWin;
@@ -355,121 +381,117 @@ contract NeutralDragonTournament{
                         resultScores.push(wizard2Score);
                        
                     } else {
-                         for(uint i=0;i<resultScores.length;i++){
-                        
+                         for(uint256 i=0;i<resultScores.length;i++){
+                        if(resultScores[i].plrAddress == wizardAdr1){
+                        resultScores[i].totalScore = resultScores[i].totalScore+wizard1RoundScore;
+                        resultScores[i].plrStatus = 1;
+                        resultScores[i].noOfWins = resultScores[i].noOfWins+wizard1RoundWin;
+                        resultScores[i].noOfLoss = resultScores[i].noOfLoss+wizard1RoundLoss;
+                        resultScores[i].noOftie = resultScores[i].noOftie+wizard1RoundTie;
+                        resultScores[i].elementalWin = resultScores[i].elementalWin+wizard1ElementalWin;
+                        resultScores[i].elementalLoss = resultScores[i].elementalLoss+wizard1ElementalLoss;
+                        resultScores[i].noOfWinAgainstElemental = resultScores[i].noOfWinAgainstElemental+wizard1WinAgainstElemental;
+                        resultScores[i].noOfLossAgainstElemental = resultScores[i].noOfLossAgainstElemental+wizard1LossAgainstElemental;
+                        wizardFound = true;
+                        } else if(resultScores[i].plrAddress == wizardAdr2){
+                        resultScores[i].totalScore = resultScores[i].totalScore+wizard2RoundScore;
+                        resultScores[i].plrStatus = 1;
+                        resultScores[i].noOfWins = resultScores[i].noOfWins+wizard2RoundWin;
+                        resultScores[i].noOfLoss = resultScores[i].noOfLoss+wizard2RoundLoss;
+                        resultScores[i].noOftie = resultScores[i].noOftie+wizard2RoundTie;
+                        resultScores[i].elementalWin = resultScores[i].elementalWin+wizard2ElementalWin;
+                        resultScores[i].elementalLoss = resultScores[i].elementalLoss+wizard2ElementalLoss;
+                        resultScores[i].noOfWinAgainstElemental = resultScores[i].noOfWinAgainstElemental+wizard2WinAgainstElemental;
+                        resultScores[i].noOfLossAgainstElemental = resultScores[i].noOfLossAgainstElemental+wizard2LossAgainstElemental;
+                        wizardFound = true;
+                        }
+                    }
+                    if(!wizardFound){
+                         scoreArr memory wizard1Score = scoreArr(address(0),0,0,0,0,0,0,0,0,0);
+                        wizard1Score.plrAddress = wizardAdr1;
+                        wizard1Score.totalScore = wizard1RoundScore;
+                        wizard1Score.plrStatus = 1;
+                        wizard1Score.noOfWins = wizard1RoundWin;
+                        wizard1Score.noOfLoss = wizard1RoundLoss;
+                        wizard1Score.noOftie = wizard1RoundTie;
+                        wizard1Score.elementalWin = wizard1ElementalWin;
+                        wizard1Score.elementalLoss = wizard1ElementalLoss;
+                        wizard1Score.noOfWinAgainstElemental = wizard1WinAgainstElemental;
+                        wizard1Score.noOfLossAgainstElemental = wizard1LossAgainstElemental;
+                        resultScores.push(wizard1Score);
+                      scoreArr memory wizard2Score = scoreArr(address(0),0,0,0,0,0,0,0,0,0);
+                        wizard2Score.plrAddress = wizardAdr2;
+                        wizard2Score.totalScore = wizard2RoundScore;
+                        wizard2Score.plrStatus = 1;
+                        wizard2Score.noOfWins = wizard2RoundWin;
+                        wizard2Score.noOfLoss = wizard2RoundLoss;
+                        wizard2Score.noOftie = wizard2RoundTie;
+                        wizard2Score.elementalWin = wizard2ElementalWin;
+                        wizard2Score.elementalLoss = wizard2ElementalLoss;
+                        wizard2Score.noOfWinAgainstElemental = wizard2WinAgainstElemental;
+                        wizard2Score.noOfLossAgainstElemental = wizard2LossAgainstElemental;
+                        resultScores.push(wizard2Score);
+                        wizardFound = false;
                     }
                         
                     }
                    
                 }
+                getWinner(wizardAdr1,wizardAdr2,wizard1RoundWin,wizard1RoundWin,wizard1LevelScore,wizard2LevelScore,wizard1TimeStamp,wizard2TimeStamp);
+    }
+    
+    function getWinner(address wizard1,address wizard2,uint256 wizard1RoundWin,uint256 wizard2RoundWin,uint256 wizard1LevelScore,uint256 wizard2LevelScore,uint256 wizard1TimeStamp,uint256 wizard2TimeStamp) public{
+        if(wizard1RoundWin > wizard2RoundWin){
+            for(uint i=0;i<tPlayers.length;i++){
+                if(tPlayers[i].player == wizard2){
+                    delete tPlayers[i];
+                }
+            }
+        } else if(wizard1RoundWin < wizard2RoundWin){
+            for(uint i=0;i<tPlayers.length;i++){
+                if(tPlayers[i].player == wizard1){
+                    delete tPlayers[i];
+                }
+            }
+        } else {
+            if(wizard1LevelScore > wizard2LevelScore){
+            for(uint i=0;i<tPlayers.length;i++){
+                if(tPlayers[i].player == wizard2){
+                    delete tPlayers[i];
+                }
+            }
+            } else if(wizard1LevelScore < wizard2LevelScore){
+            for(uint i=0;i<tPlayers.length;i++){
+                if(tPlayers[i].player == wizard1){
+                    delete tPlayers[i];
+                }
+            }
+            } else{
+                if(wizard1TimeStamp > wizard2TimeStamp){
+                    for(uint i=0;i<tPlayers.length;i++){
+                         if(tPlayers[i].player == wizard2){
+                             delete tPlayers[i];
+                        }
+                    }
+                } else if(wizard1TimeStamp < wizard2TimeStamp){
+                    for(uint i=0;i<tPlayers.length;i++){
+                         if(tPlayers[i].player == wizard2){
+                             delete tPlayers[i];
+                        }
+                    }
+                }
+            }
+        }
+        wizard1LevelScore = 0;
+        wizard2LevelScore = 0;
+        wizard1LevelWin = 0;
+        wizard2LevelWin = 0;
+        wizard1RoundWin = 0;
+        wizard2RoundWin = 0;
+        
     }
 
-// function updateScore(address wizard1,address wizard2)
-
-
-
-/*
-function updateScore(uint256 win1,uint256 win2,uint256 w1Score,uint256 w2Score,address w1,address w2) public{
-
-    // scoreArr.add(score1,score2,w1,w2);
-
-if (win1 > win2){
-      for (uint i=0;i<tPlayers.length;i++) {
-            if (tPlayers[i].player == w1 ){
-       tPlayers[i].winStatus = false;
-            }
-        }
-}
-else if (win1 < win2){
-
-//scoreArr.add(score1,score2,w1,w2)
-            for (uint i=0;i<tPlayers.length;i++) {
-            if (tPlayers[i].player == w2){
-
-       tPlayers[i].winStatus = false;
-            }
-   }
-}
-else {
-if (w1Score > w2Score){
-for (uint i=0;i<tPlayers.length;i++) {
-                if (tPlayers[i].player == w2){
-
-           tPlayers[i].winStatus = false;
-                }
-}
-}
-else if (w1Score < w2Score) {
-       for (uint i=0;i<tPlayers.length;i++) {
-                        if (tPlayers[i].player == w1){
-
-                       tPlayers[i].winStatus = false;
-                        }
-       }
-}
-else{ // Check table topper who stays alive tournament in score arr.
-
-// if (timeStamp1 > timeStamp2){
-//        for (uint i=0;i<tPlayers.length;i++) {
-//                             if (tPlayers[i].player == w1){
-
-//                            tPlayers[i].winStatus = false;
-//                             }
-//        }
-// }
-// else{
-// for (uint i=0;i<tPlayers.length;i++) {
-//                         if (tPlayers[i].player == w1){
-
-//                        tPlayers[i].winStatus = false;
-//                         }
-
-//        }
-//    }
-}
-
-        for (uint i=0;i<tPlayers.length;i++){
-            if (!tPlayers[i].winStatus){
-       delete tPlayers[i];
-
-            }
-        }
- // Add byeArray to wizardArray
- //  clear byeArrayData
-      //  reset tempVariables;
-        levelNum++;
-        roundFixtures(); // recursive
-        if (tPlayers.length == 2){
-            distributePrize();
-            }
-
-
-}
-}
-function distributePrize() public {
-    
-        if (tPlayers.length == 1) {
-           tPlayers[0].transfer(tPlayers[0].bet); 
-        }
-else{
-         uint256 totalFeesCollected = totalOfParticipants*betAmt;
-    uint256 totalPrizeMoney = totalFeesCollected*90/100;
-    uint256 developerCommission = totalFeesCollected*10/100;
-        // Iterate tPlayers[i].player == winnerArray[i].playerAddress
-        // if{
-            tPlayers[0].transfer(totalPrizeMoney*60/100);
-
-            tPlayers[1].transfer(totalPrizeMoney*30/100);
-            // }
-        // getTableTopperfromScore,
-        developer.transfer(totalPrizeMoney*10/100);
-        delete winnerArray;
-}
-
-}
-
-
-    function compareRankingsAndPush() public{
+/*    function compareRankingsAndPush() public{
         createMatchFixture();
     }
     
